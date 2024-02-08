@@ -11,13 +11,21 @@ contract RPS {
   uint public reward = 0;
   Player public player0;
   Player public player1;
+  uint public numPlayer = 0;
   uint public numInput = 0;
+  uint public inputDeadline = 0;
   uint public numReveal = 0;
+  uint public revealDeadline = 0;
+  uint public duration = 3 minutes;
 
   function addPlayer() public payable {
-    require(player0.addr == address(0x0) || player1.addr == address(0x0));
+    require(numPlayer < 2);
     require(msg.value == 1 ether);
+    if (inputDeadline == 0) {
+      inputDeadline = block.timestamp + duration;
+    }
     reward += msg.value;
+    numPlayer++;
     if (player0.addr == address(0x0)) {
       player0.addr = msg.sender;
       player0.choice = 3;
@@ -32,8 +40,9 @@ contract RPS {
   }
 
   function input(bytes32 hashChoice) public {
-    require(player0.addr != address(0x0) && player1.addr != address(0x0));
+    require(numPlayer == 2);
     require(numInput < 2);
+    require(block.timestamp < inputDeadline);
     if (msg.sender == player0.addr) {
       require(player0.choice == 3); // not yet revealed
       require(player0.commit == 0); // not yet committed
@@ -44,24 +53,24 @@ contract RPS {
       player1.commit = hashChoice;
     }
     numInput++;
+    if (numInput == 2) {
+      revealDeadline = block.timestamp + duration;
+    }
   }
 
   function reveal(uint choice, string memory password) public {
     require(numInput == 2);
     require(numReveal < 2);
+    require(block.timestamp < revealDeadline);
     if (msg.sender == player0.addr) {
       require(player0.choice == 3); // not yet revealed
       require(player0.commit != 0); // already committed
-      require(
-        keccak256(abi.encodePacked(choice, password)) == player0.commit
-      );
+      require(keccak256(abi.encodePacked(choice, password)) == player0.commit);
       player0.choice = choice;
     } else if (msg.sender == player1.addr) {
       require(player1.choice == 3); // not yet revealed
       require(player1.commit != 0); // already committed
-      require(
-        keccak256(abi.encodePacked(choice, password)) == player1.commit
-      );
+      require(keccak256(abi.encodePacked(choice, password)) == player1.commit);
       player1.choice = choice;
     }
     numReveal++;
@@ -91,22 +100,53 @@ contract RPS {
   }
 
   function _resetStage() private {
-    require(numReveal == 2);
     player0.choice = 3;
     player1.choice = 3;
     player0.commit = 0;
     player1.commit = 0;
     player0.addr = address(0x0);
     player1.addr = address(0x0);
+    numPlayer = 0;
     numInput = 0;
     numReveal = 0;
+    inputDeadline = 0;
+    revealDeadline = 0;
   }
 
-  function getHash(uint choice, string memory password)
-    public
-    pure
-    returns (bytes32)
-  {
+  function getHash(
+    uint choice,
+    string memory password
+  ) public pure returns (bytes32) {
     return keccak256(abi.encodePacked(choice, password));
+  }
+
+  function claimReward() public {
+    require(msg.sender == player0.addr || msg.sender == player1.addr);
+    // if there are no other player, the player can claim the reward
+    address payable account = payable(msg.sender);
+    Player memory p;
+    if (msg.sender == player0.addr) {
+      p = player0;
+    } else if (msg.sender == player1.addr) {
+      p = player1;
+    }
+    // if the others player has not input the choice, the player can claim the reward
+    if (numPlayer < 2) {
+      account.transfer(reward);
+    }
+    // if the others player has not input the choice, the player can claim the reward
+    else if (numInput < 2) {
+      require(block.timestamp > inputDeadline);
+      require(p.choice == 3 && p.commit != 0);
+      account.transfer(reward);
+    }
+    // if the others player has not reveal the choice, the player can claim the reward
+    else if (numReveal < 2) {
+      require(block.timestamp > revealDeadline);
+      require(p.choice != 3);
+      account.transfer(reward);
+    }
+    reward = 0;
+    _resetStage();
   }
 }
