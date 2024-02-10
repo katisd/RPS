@@ -2,10 +2,12 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-contract RPS {
+import "./CommitReveal.sol";
+
+contract RPS is CommitReveal {
   struct Player {
     uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
-    bytes32 commit;
+    bool commit; // true - committed, false - not yet committed
     address addr;
   }
   uint public reward = 0;
@@ -21,59 +23,57 @@ contract RPS {
   function addPlayer() public payable {
     require(numPlayer < 2);
     require(msg.value == 1 ether);
-    if (inputDeadline == 0) {
-      inputDeadline = block.timestamp + duration;
-    }
     reward += msg.value;
     numPlayer++;
-    if (player0.addr == address(0x0)) {
-      player0.addr = msg.sender;
-      player0.choice = 3;
-      player0.commit = 0;
-      return;
-    } else if (player1.addr == address(0x0)) {
-      player1.addr = msg.sender;
-      player1.choice = 3;
-      player1.commit = 0;
-      return;
+        // set deadline for input when the second player join
+    if (numPlayer == 2) {
+      inputDeadline = block.timestamp + duration;
     }
+    Player storage p;
+    if (player0.addr == address(0x0)) {
+      p = player0;
+    } else {
+      p = player1;
+    }
+    p.addr = msg.sender;
+    p.choice = 3;
+    p.commit = false;
+
   }
 
   function input(bytes32 hashChoice) public {
     require(numPlayer == 2);
     require(numInput < 2);
     require(block.timestamp < inputDeadline);
-    if (msg.sender == player0.addr) {
-      require(player0.choice == 3); // not yet revealed
-      require(player0.commit == 0); // not yet committed
-      player0.commit = hashChoice;
-    } else if (msg.sender == player1.addr) {
-      require(player1.choice == 3); // not yet revealed
-      require(player1.commit == 0); // not yet committed
-      player1.commit = hashChoice;
+    Player storage p;
+    if (player0.addr == msg.sender) {
+      p = player0;
+    } else {
+      p = player1;
     }
+    require(p.commit == false);
+    p.commit = true;
+    commit(hashChoice);
     numInput++;
     if (numInput == 2) {
       revealDeadline = block.timestamp + duration;
     }
   }
 
-  function reveal(uint choice, string memory password) public {
+  function revealChoice(uint choice, string memory password) public {
     require(numInput == 2);
     require(numReveal < 2);
     require(block.timestamp < revealDeadline);
+    require(msg.sender == player0.addr || msg.sender == player1.addr);
+    Player storage p;
     if (msg.sender == player0.addr) {
-      require(player0.choice == 3); // not yet revealed
-      require(player0.commit != 0); // already committed
-      require(keccak256(abi.encodePacked(choice, password)) == player0.commit);
-      player0.choice = choice;
-    } else if (msg.sender == player1.addr) {
-      require(player1.choice == 3); // not yet revealed
-      require(player1.commit != 0); // already committed
-      require(keccak256(abi.encodePacked(choice, password)) == player1.commit);
-      player1.choice = choice;
+      p = player0;
+    } else {
+      p = player1;
     }
+    revealAnswer(choice, password);
     numReveal++;
+    p.choice = choice;
     if (numReveal == 2) {
       _checkWinnerAndPay();
     }
@@ -100,10 +100,6 @@ contract RPS {
   }
 
   function _resetStage() private {
-    player0.choice = 3;
-    player1.choice = 3;
-    player0.commit = 0;
-    player1.commit = 0;
     player0.addr = address(0x0);
     player1.addr = address(0x0);
     numPlayer = 0;
@@ -113,16 +109,8 @@ contract RPS {
     revealDeadline = 0;
   }
 
-  function getHash(
-    uint choice,
-    string memory password
-  ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(choice, password));
-  }
-
   function claimReward() public {
     require(msg.sender == player0.addr || msg.sender == player1.addr);
-    // if there are no other player, the player can claim the reward
     address payable account = payable(msg.sender);
     Player memory p;
     if (msg.sender == player0.addr) {
@@ -130,14 +118,14 @@ contract RPS {
     } else if (msg.sender == player1.addr) {
       p = player1;
     }
-    // if the others player has not input the choice, the player can claim the reward
+    // if there are no other player, the player can claim the reward
     if (numPlayer < 2) {
       account.transfer(reward);
     }
     // if the others player has not input the choice, the player can claim the reward
     else if (numInput < 2) {
       require(block.timestamp > inputDeadline);
-      require(p.choice == 3 && p.commit != 0);
+      require(p.choice == 3 && p.commit != false);
       account.transfer(reward);
     }
     // if the others player has not reveal the choice, the player can claim the reward
@@ -148,5 +136,23 @@ contract RPS {
     }
     reward = 0;
     _resetStage();
+  }
+
+  function timeLeft() public view returns ( string memory stage,uint time) {
+    if(numPlayer < 2) {
+      return ("Wait for players", 0);
+    } else if (numInput < 2) {
+      if(inputDeadline> block.timestamp){
+      return ("Time left to input", inputDeadline - block.timestamp);
+      }
+      return ("Exceed input time",0);
+    } else if (numReveal < 2) {
+      if( revealDeadline > block.timestamp){
+      return ("Time left to reveal", revealDeadline - block.timestamp);
+      } 
+      return  ("Exceed reveal time",0);
+    } else {
+      return ("Game over", 0);
+    }
   }
 }
