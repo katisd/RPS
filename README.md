@@ -115,7 +115,7 @@ Since there is no resetting, so we can't replay this contract. We can have the r
 ## Additional
 <!-- TOC --><a name="timed-commitment"></a>
 ### Timed commitment
-Since we do timed commitment as mentioned. I also provided a timeLeft function for player to know stage and time left for commit or reveal.
+Since we do timed commitments as mentioned. I also provided a timeLeft function for players to know the stage and time left for commit or reveal.
 ```solidity
   function timeLeft() public view returns (string memory stage, uint time) {
     if (numPlayer < 2) {
@@ -136,7 +136,7 @@ Since we do timed commitment as mentioned. I also provided a timeLeft function f
   }
 ```
 <!-- TOC --><a name="extened-choice"></a>
-### Extened choice
+### Extended choice
 I also add more choice for player.
 ```
 0 - Rock,
@@ -149,7 +149,7 @@ I also add more choice for player.
 7 - unrevealed
 ```
 ![img](https://i.pinimg.com/564x/af/1f/ad/af1fadd6bdbf11a193fe9e4acce10dae.jpg) <br/>
-As there are more choice, we need to change a rule for winner.
+As there are more choices, we need to change the rule for the winner.
 ```solidity
   function _checkWinnerAndPay() private {
     uint p0Choice = player0.choice;
@@ -157,17 +157,37 @@ As there are more choice, we need to change a rule for winner.
     address payable account0 = payable(player0.addr);
     address payable account1 = payable(player1.addr);
     if (p0Choice == p1Choice) {
-      // to split reward
-      account0.transfer(reward / 2);
-      account1.transfer(reward / 2);
-    } else if (((p0Choice - p1Choice) % 7) <= 3) {
-      // to pay player0
-      account0.transfer(reward);
+        // to split reward
+        account0.transfer(reward / 2);
+        account1.transfer(reward / 2);
+    } else if (((p0Choice+1)%unrevealChoice)==p1Choice||((p0Choice+2)%unrevealChoice)==p1Choice||((p0Choice+3)%unrevealChoice)==p1Choice) {
+        // to pay player[1]
+        account1.transfer(reward);
     } else {
-      // to pay player[1]
-      account1.transfer(reward);
+        // to pay player0
+        account0.transfer(reward);
     }
     reward = 0;
     _resetStage();
   }
 ```
+## Example
+### example 1 | player 1 chose 1(water), player 2 chose 5(Scissors) => Water rusts Scissors so player 1 should win
+1. After adding 2 players, each player will send a hash of choice and salt which can be obtained from the getSaltedHash function as shown.
+![player1](https://github.com/katisd/RPS/assets/90249534/e0de0de7-344b-44a1-a3df-ecead5cb7c48)
+![player2](https://github.com/katisd/RPS/assets/90249534/f0f0f9af-e9f4-42c0-ad20-e31f5cca7551)
+
+3. Reveal choice<br/>
+![image](https://github.com/katisd/RPS/assets/90249534/d8700fd2-5ce3-4292-ba67-e47a944097ff)
+![image](https://github.com/katisd/RPS/assets/90249534/6c10a8fe-6749-4c97-a3f5-a321902af066)
+
+4. Result in player 2 losing 1 ETH to player 1 <br/>
+![image](https://github.com/katisd/RPS/assets/90249534/2d403f80-6203-423f-92f4-ef3f8ab6fc8b)
+
+### example 2 | player 1 and 2 chose 1(water) => It should be even and they get ETH back
+1. After adding 2 players, each player will send a hash of choice and salt which can be obtained from the getSaltedHash function as shown. <br/>
+![image](https://github.com/katisd/RPS/assets/90249534/88a54be8-4011-4609-bcd4-e7373a81314f)
+![image](https://github.com/katisd/RPS/assets/90249534/88a54be8-4011-4609-bcd4-e7373a81314f)
+2. After revealing answers since the results even each player will get 1 ETH back. <br/>
+![image](https://github.com/katisd/RPS/assets/90249534/546a3842-a9af-4e3b-a746-8a29248fdb98)
+![image](https://github.com/katisd/RPS/assets/90249534/51132820-c173-4c55-9468-cc6154748366)
