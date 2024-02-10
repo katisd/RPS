@@ -6,10 +6,11 @@ import "./CommitReveal.sol";
 
 contract RPS is CommitReveal {
   struct Player {
-    uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
+    uint256 choice; // 0 - Rock, 1 - water , 2 -Air, 3-Paper, 4-sponge, 5-Scissors, 6-Fire, 7-unrevealed
     bool commit; // true - committed, false - not yet committed
     address addr;
   }
+  uint public constant unrevealChoice = 7;
   uint public reward = 0;
   Player public player0;
   Player public player1;
@@ -36,7 +37,7 @@ contract RPS is CommitReveal {
       p = player1;
     }
     p.addr = msg.sender;
-    p.choice = 3;
+    p.choice = unrevealChoice;
     p.commit = false;
   }
 
@@ -83,16 +84,16 @@ contract RPS is CommitReveal {
     uint p1Choice = player1.choice;
     address payable account0 = payable(player0.addr);
     address payable account1 = payable(player1.addr);
-    if ((p0Choice + 1) % 3 == p1Choice) {
-      // to pay player[1]
-      account1.transfer(reward);
-    } else if ((p1Choice + 1) % 3 == p0Choice) {
-      // to pay player[0]
-      account0.transfer(reward);
-    } else {
+    if (p0Choice == p1Choice) {
       // to split reward
       account0.transfer(reward / 2);
       account1.transfer(reward / 2);
+    } else if (((p0Choice - p1Choice) % 7) <= 3) {
+      // to pay player0
+      account0.transfer(reward);
+    } else {
+      // to pay player[1]
+      account1.transfer(reward);
     }
     reward = 0;
     _resetStage();
@@ -124,13 +125,13 @@ contract RPS is CommitReveal {
     // if the others player has not input the choice, the player can claim the reward
     else if (numInput < 2) {
       require(block.timestamp > inputDeadline);
-      require(p.choice == 3 && p.commit != false);
+      require(p.choice == unrevealChoice && p.commit != false);
       account.transfer(reward);
     }
     // if the others player has not reveal the choice, the player can claim the reward
     else if (numReveal < 2) {
       require(block.timestamp > revealDeadline);
-      require(p.choice != 3);
+      require(p.choice != unrevealChoice);
       account.transfer(reward);
     }
     reward = 0;
