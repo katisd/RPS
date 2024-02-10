@@ -13,7 +13,7 @@ contract CommitReveal {
 
   mapping(address => Commit) internal commits;
 
-  function commit(bytes32 dataHash) internal  {
+  function commit(bytes32 dataHash) internal {
     commits[msg.sender].commit = dataHash;
     commits[msg.sender].block = uint64(block.number);
     commits[msg.sender].revealed = false;
@@ -25,9 +25,7 @@ contract CommitReveal {
   }
   event CommitHash(address sender, bytes32 dataHash, uint64 block);
 
-
-
-  function revealAnswer(uint answer, string memory salt) internal  {
+  function revealAnswer(uint answer, string memory salt) internal {
     //make sure it hasn't been revealed yet and set it to revealed
     require(
       commits[msg.sender].revealed == false,
@@ -41,7 +39,7 @@ contract CommitReveal {
     );
     emit RevealAnswer(msg.sender, answer, salt);
   }
-  event RevealAnswer(address sender, uint  answer, string  salt);
+  event RevealAnswer(address sender, uint answer, string salt);
 
   function getSaltedHash(
     uint data,

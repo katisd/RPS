@@ -25,7 +25,7 @@ contract RPS is CommitReveal {
     require(msg.value == 1 ether);
     reward += msg.value;
     numPlayer++;
-        // set deadline for input when the second player join
+    // set deadline for input when the second player join
     if (numPlayer == 2) {
       inputDeadline = block.timestamp + duration;
     }
@@ -38,7 +38,6 @@ contract RPS is CommitReveal {
     p.addr = msg.sender;
     p.choice = 3;
     p.commit = false;
-
   }
 
   function input(bytes32 hashChoice) public {
@@ -138,19 +137,19 @@ contract RPS is CommitReveal {
     _resetStage();
   }
 
-  function timeLeft() public view returns ( string memory stage,uint time) {
-    if(numPlayer < 2) {
+  function timeLeft() public view returns (string memory stage, uint time) {
+    if (numPlayer < 2) {
       return ("Wait for players", 0);
     } else if (numInput < 2) {
-      if(inputDeadline> block.timestamp){
-      return ("Time left to input", inputDeadline - block.timestamp);
+      if (inputDeadline > block.timestamp) {
+        return ("Time left to input", inputDeadline - block.timestamp);
       }
-      return ("Exceed input time",0);
+      return ("Exceed input time", 0);
     } else if (numReveal < 2) {
-      if( revealDeadline > block.timestamp){
-      return ("Time left to reveal", revealDeadline - block.timestamp);
-      } 
-      return  ("Exceed reveal time",0);
+      if (revealDeadline > block.timestamp) {
+        return ("Time left to reveal", revealDeadline - block.timestamp);
+      }
+      return ("Exceed reveal time", 0);
     } else {
       return ("Game over", 0);
     }
