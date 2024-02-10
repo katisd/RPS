@@ -11,6 +11,9 @@
    * [Additional](#additional)
       + [Timed commitment](#timed-commitment)
       + [Extened choice](#extened-choice)
+  * [Example](#example)
+    + [example 1 | win and lose](#example-1)
+    + [example 2 | even](#example-2)
 
 <!-- TOC end -->
 
@@ -171,7 +174,9 @@ As there are more choices, we need to change the rule for the winner.
     _resetStage();
   }
 ```
+<!-- TOC --><a name="example"></a>
 ## Example
+<!-- TOC --><a name="example-1"></a>
 ### example 1 | player 1 chose 1(water), player 2 chose 5(Scissors) => Water rusts Scissors so player 1 should win
 1. After adding 2 players, each player will send a hash of choice and salt which can be obtained from the getSaltedHash function as shown.
 ![player1](https://github.com/katisd/RPS/assets/90249534/e0de0de7-344b-44a1-a3df-ecead5cb7c48)
@@ -183,7 +188,7 @@ As there are more choices, we need to change the rule for the winner.
 
 4. Result in player 2 losing 1 ETH to player 1 <br/>
 ![image](https://github.com/katisd/RPS/assets/90249534/2d403f80-6203-423f-92f4-ef3f8ab6fc8b)
-
+<!-- TOC --><a name="example-2"></a>
 ### example 2 | player 1 and 2 chose 1(water) => It should be even and they get ETH back
 1. After adding 2 players, each player will send a hash of choice and salt which can be obtained from the getSaltedHash function as shown. <br/>
 ![image](https://github.com/katisd/RPS/assets/90249534/88a54be8-4011-4609-bcd4-e7373a81314f)
