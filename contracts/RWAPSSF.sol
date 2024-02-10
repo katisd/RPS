@@ -88,12 +88,16 @@ contract RPS is CommitReveal {
       // to split reward
       account0.transfer(reward / 2);
       account1.transfer(reward / 2);
-    } else if (((p0Choice - p1Choice) % 7) <= 3) {
-      // to pay player0
-      account0.transfer(reward);
-    } else {
+    } else if (
+      ((p0Choice + 1) % unrevealChoice) == p1Choice ||
+      ((p0Choice + 2) % unrevealChoice) == p1Choice ||
+      ((p0Choice + 3) % unrevealChoice) == p1Choice
+    ) {
       // to pay player[1]
       account1.transfer(reward);
+    } else {
+      // to pay player0
+      account0.transfer(reward);
     }
     reward = 0;
     _resetStage();
