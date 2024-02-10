@@ -1,6 +1,7 @@
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+<!-- TOC --><a name="optimize-rps"></a>
+# Optimize RPS
 
-- [Optimize RPS](#optimize-rps)
    * [Problem](#problem)
    * [Solution](#solution)
       + [Front running](#front-running)
@@ -13,8 +14,7 @@
 
 <!-- TOC end -->
 
-<!-- TOC --><a name="optimize-rps"></a>
-# Optimize RPS
+
 <!-- TOC --><a name="problem"></a>
 ## Problem
 1. Front-running
