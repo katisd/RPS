@@ -6,7 +6,8 @@ import "./CommitReveal.sol";
 
 contract RPS is CommitReveal {
   struct Player {
-    uint256 choice; // 0 - Rock, 1 - water , 2 -Air, 3-Paper, 4-sponge, 5-Scissors, 6-Fire, 7-unrevealed
+    uint256 choice0; // 0 - Rock, 1 - water , 2 -Air, 3-Paper, 4-sponge, 5-Scissors, 6-Fire, 7-unrevealed
+    uint256 choice1; // 0 - Rock, 1 - water , 2 -Air, 3-Paper, 4-sponge, 5-Scissors, 6-Fire, 7-unrevealed
     bool commit; // true - committed, false - not yet committed
     address addr;
   }
@@ -37,7 +38,8 @@ contract RPS is CommitReveal {
       p = player1;
     }
     p.addr = msg.sender;
-    p.choice = unrevealChoice;
+    p.choice0 = unrevealChoice;
+    p.choice1 = unrevealChoice;
     p.commit = false;
   }
 
@@ -60,7 +62,11 @@ contract RPS is CommitReveal {
     }
   }
 
-  function revealChoice(uint choice, string memory password) public {
+  function revealChoice(
+    uint choice1,
+    uint choice2,
+    string memory password
+  ) public {
     require(numInput == 2);
     require(numReveal < 2);
     require(block.timestamp < revealDeadline);
@@ -71,27 +77,57 @@ contract RPS is CommitReveal {
     } else {
       p = player1;
     }
-    revealAnswer(choice, password);
+    revealAnswer(choice1, choice2, password);
     numReveal++;
-    p.choice = choice;
+    p.choice0 = choice1;
+    p.choice1 = choice2;
     if (numReveal == 2) {
       _checkWinnerAndPay();
     }
   }
 
   function _checkWinnerAndPay() private {
-    uint p0Choice = player0.choice;
-    uint p1Choice = player1.choice;
+    uint p0Choice0 = player0.choice0;
+    uint p0Choice1 = player0.choice1;
+
+    uint p1Choice0 = player1.choice00;
+    uint p1Choice1 = player1.choice1;
     address payable account0 = payable(player0.addr);
     address payable account1 = payable(player1.addr);
-    if (p0Choice == p1Choice) {
+
+    uint p0Point = 0;
+    uint p1Point = 0;
+    if (p0Choice0 == p1Choice0) {
+      p0Point++;
+      p1Point++;
+    } else if (
+      ((p0Choice0 + 1) % unrevealChoice) == p1Choice0 ||
+      ((p0Choice0 + 2) % unrevealChoice) == p1Choice0 ||
+      ((p0Choice0 + 3) % unrevealChoice) == p1Choice0
+    ) {
+      p1Point+=2;
+    }else{
+      p0Point+=2;
+    }
+    if (p0Choice1 == p1Choice1) {
+      p0Point++;
+      p1Point++;
+    } else if (
+      ((p0Choice1 + 1) % unrevealChoice) == p1Choice1 ||
+      ((p0Choice1 + 2) % unrevealChoice) == p1Choice1 ||
+      ((p0Choice1 + 3) % unrevealChoice) == p1Choice1
+    ) {
+      p1Point+=2;
+    }else{
+      p0Point+=2;
+    }
+
+    if (p1Point==p0Point){ {
       // to split reward
       account0.transfer(reward / 2);
       account1.transfer(reward / 2);
     } else if (
-      ((p0Choice + 1) % unrevealChoice) == p1Choice ||
-      ((p0Choice + 2) % unrevealChoice) == p1Choice ||
-      ((p0Choice + 3) % unrevealChoice) == p1Choice
+      p1Point > p0Point
     ) {
       // to pay player[1]
       account1.transfer(reward);
