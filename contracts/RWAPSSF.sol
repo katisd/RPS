@@ -90,7 +90,7 @@ contract RPS is CommitReveal {
     uint p0Choice0 = player0.choice0;
     uint p0Choice1 = player0.choice1;
 
-    uint p1Choice0 = player1.choice00;
+    uint p1Choice0 = player1.choice0;
     uint p1Choice1 = player1.choice1;
     address payable account0 = payable(player0.addr);
     address payable account1 = payable(player1.addr);
@@ -105,9 +105,9 @@ contract RPS is CommitReveal {
       ((p0Choice0 + 2) % unrevealChoice) == p1Choice0 ||
       ((p0Choice0 + 3) % unrevealChoice) == p1Choice0
     ) {
-      p1Point+=2;
-    }else{
-      p0Point+=2;
+      p1Point += 2;
+    } else {
+      p0Point += 2;
     }
     if (p0Choice1 == p1Choice1) {
       p0Point++;
@@ -117,18 +117,16 @@ contract RPS is CommitReveal {
       ((p0Choice1 + 2) % unrevealChoice) == p1Choice1 ||
       ((p0Choice1 + 3) % unrevealChoice) == p1Choice1
     ) {
-      p1Point+=2;
-    }else{
-      p0Point+=2;
+      p1Point += 2;
+    } else {
+      p0Point += 2;
     }
 
-    if (p1Point==p0Point){ {
+    if (p1Point == p0Point) {
       // to split reward
       account0.transfer(reward / 2);
       account1.transfer(reward / 2);
-    } else if (
-      p1Point > p0Point
-    ) {
+    } else if (p1Point > p0Point) {
       // to pay player[1]
       account1.transfer(reward);
     } else {
@@ -165,13 +163,17 @@ contract RPS is CommitReveal {
     // if the others player has not input the choice, the player can claim the reward
     else if (numInput < 2) {
       require(block.timestamp > inputDeadline);
-      require(p.choice == unrevealChoice && p.commit != false);
+      require(
+        p.choice0 == unrevealChoice &&
+          p.choice1 == unrevealChoice &&
+          p.commit != false
+      );
       account.transfer(reward);
     }
     // if the others player has not reveal the choice, the player can claim the reward
     else if (numReveal < 2) {
       require(block.timestamp > revealDeadline);
-      require(p.choice != unrevealChoice);
+      require(p.choice0 != unrevealChoice && p.choice1 != unrevealChoice);
       account.transfer(reward);
     }
     reward = 0;
