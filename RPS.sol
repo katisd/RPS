@@ -2,7 +2,8 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-contract RPS {
+import "./CommitReveal.sol";
+contract RPS is CommitReveal {
     enum Choice {
         Scissors,
         Paper,
@@ -12,8 +13,10 @@ contract RPS {
     }
 
     uint public numPlayer = 0;
+    uint public numReveal = 0;
     uint public reward = 0;
     mapping(address => Choice) public player_choice;
+    mapping(address => bytes32) public player_hashedChoice;
     mapping(address => bool) public player_not_played;
     address[] public players;
     address[] public allowedPlayerList = [
@@ -46,10 +49,27 @@ contract RPS {
         numPlayer++;
     }
 
-    function input(Choice choice) public {
+    function getHashedChoice(
+        Choice choice,
+        string memory secret
+    ) public pure returns (bytes32) {
+        return getHash(bytes32(abi.encodePacked(choice, secret)));
+    }
+
+    function inputHashedChoice(bytes32 hashedChoice) public {
         require(numPlayer == 2);
         require(player_not_played[msg.sender]);
-        // choice must be in Choice enum
+
+        commit(hashedChoice);
+        player_hashedChoice[msg.sender] = hashedChoice;
+        player_not_played[msg.sender] = false;
+        numInput++;
+    }
+
+    function revealChoice(Choice choice, string memory secret) public {
+        require(numPlayer == 2);
+        require(!player_not_played[msg.sender]);
+        require(!commits[msg.sender].revealed);
         require(
             choice == Choice.Scissors ||
                 choice == Choice.Paper ||
@@ -57,15 +77,18 @@ contract RPS {
                 choice == Choice.Lizard ||
                 choice == Choice.Spock
         );
+
+        reveal(bytes32(abi.encodePacked(choice, secret)));
         player_choice[msg.sender] = choice;
-        player_not_played[msg.sender] = false;
-        numInput++;
-        if (numInput == 2) {
+        numReveal++;
+        if (numReveal == 2) {
             _checkWinnerAndPay();
+            _resetGame();
         }
     }
 
     function _checkWinnerAndPay() private {
+        require(numReveal == 2);
         Choice p0Choice = player_choice[players[0]];
         Choice p1Choice = player_choice[players[1]];
         address payable account0 = payable(players[0]);
@@ -86,6 +109,17 @@ contract RPS {
             // to split reward
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
+        }
+    }
+
+    function _resetGame() private {
+        numPlayer = 0;
+        numReveal = 0;
+        reward = 0;
+        numInput = 0;
+        delete players;
+        for (uint i = 0; i < allowedPlayerList.length; i++) {
+            player_not_played[allowedPlayerList[i]] = false;
         }
     }
 }
