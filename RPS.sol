@@ -69,7 +69,7 @@ contract RPS is CommitReveal, TimeUnit {
         require(player_not_played[msg.sender]);
         require(elapsedSeconds() < TIME_LIMIT);
 
-        commit(hashedChoice);
+        _commit(hashedChoice);
         player_hashedChoice[msg.sender] = hashedChoice;
         player_not_played[msg.sender] = false;
         numInput++;
@@ -88,7 +88,7 @@ contract RPS is CommitReveal, TimeUnit {
         );
         require(elapsedSeconds() < TIME_LIMIT);
 
-        reveal(bytes32(abi.encodePacked(choice, secret)));
+        _reveal(bytes32(abi.encodePacked(choice, secret)));
         player_choice[msg.sender] = choice;
         numReveal++;
         if (numReveal == 2) {
